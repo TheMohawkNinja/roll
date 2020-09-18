@@ -33,6 +33,7 @@ int main(int argc, char *argv[])
 	string sizestr="";
 	string modstr="";
 	string runctr_str="";
+	string format;
 	string user=getlogin();
 	string roll=argv[1];
 	ofstream ws;
@@ -130,9 +131,25 @@ int main(int argc, char *argv[])
 		for(int i=0; i<count; i++)
 		{
 			rndhold=(rand()%size)+1;
-			countLength=to_string(count).length();
+			countLength=countstr.length();
 			iLength=to_string(i+1).length();
-			printf("Roll %d%*s%2d\n",i+1,(countLength-iLength)+1,":",rndhold);
+			printf("Roll ");
+		
+			for(int s=countstr.length(); s>to_string(i+1).length(); s--)
+			{
+				printf(" ");
+			}
+
+			format=("%d%s");
+			printf(format.c_str(),i+1,":");
+
+			for(int s=sizestr.length(); s>to_string(rndhold).length(); s--)
+			{
+				printf(" ");
+			}
+
+			printf("%d\n",rndhold);
+
 			total+=rndhold;
 		}
 	}
