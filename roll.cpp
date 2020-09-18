@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 			}
 
 			format=("%d%s");
-			printf(format.c_str(),i+1,":");
+			printf(format.c_str(),i+1,": ");
 
 			for(int s=sizestr.length(); s>to_string(rndhold).length(); s--)
 			{
