@@ -87,11 +87,10 @@ int main(int argc, char *argv[])
 		}
 
 		//Get size of dice
-		for(int i=roll.find("d")+1; i<roll.length()&&roll.substr(i,1)!="+"; i++)
+		for(int i=roll.find("d")+1; i<roll.length()&&roll.substr(i,1)!="+"&&roll.substr(i,1)!="-"; i++)
                 {
                         sizestr+=roll.substr(i,1);
 		}
-
 		size=to_int(sizestr);
 
 		//Get modifer
@@ -121,7 +120,6 @@ int main(int argc, char *argv[])
 
 	//Roll dice
 	seed=(time(NULL)+(runctr*runctr));
-	//cout<<"Seed: "+(to_string(seed))<<endl;
 	srand(seed);
 
 	//cout<<endl;
