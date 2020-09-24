@@ -1,22 +1,28 @@
-Compile with "g++ roll.cpp -o roll" and move to /usr/bin if desired.
+roll: The simple terminal dice roller
 
-SYNTAX:
+SYNTAX "roll [-rt[?-help]] [count]d[size][+-][modifier]"
 
-roll d[size]
-OR
-roll d[size][+|-][modifier]
-OR
-roll [number]d[size]
-OR
-roll [number]d[size][+|-][modifer]
+-r
+Only show rolls
 
-	number:		Number of dice to roll
-	size:		Number of sides of each nice
-	modifier:	A modifier to the total
+-t
+Only show total
 
-EXAMPLES:
+-? or --help
+Print this help text
 
+count
+The number of dice to roll
+
+size
+The number of sides on the die(ce)
+
+modifier
+A modifier that is added to, or subtracted from, the total
+
+EXAMPLES
 roll d20
-roll d8+2
-roll 2d4
-roll 3d6+10
+roll 2d6
+roll 4d8+2
+roll -r 3d6
+roll -t 2d10+6
