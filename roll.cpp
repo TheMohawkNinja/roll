@@ -218,7 +218,6 @@ int main(int argc, char *argv[])
 		try
 		{
 			mod=stoi(modstr);
-			fprintf(stdout,"Mod=%d",mod);
 		}
 		catch(...)
 		{
