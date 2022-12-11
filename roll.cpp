@@ -7,28 +7,67 @@
 #include <unistd.h>
 #include <climits>
 
+int rollctr, seed;
+std::string user=getlogin();
+std::string rollctr_path="/home/"+user+"/.rollctr";
+std::string rollctr_str="";
+std::ifstream rs;
+std::ofstream ws;
+
 bool fexists(const char *filename)
 {
 	std::ifstream ifile(filename);
 	return (bool)ifile;
+}
+void set_rollctr()
+{
+	//Open roll counter file
+	if(!fexists(rollctr_path.c_str()))
+	{
+		ws.open(rollctr_path);
+		ws<<"1";
+		ws.close();
+	}
+	else
+	{
+		rs.open(rollctr_path);
+		getline(rs,rollctr_str);
+		rollctr=stoi(rollctr_str);
+
+		if((rollctr*rollctr)>=INT_MAX)
+		{
+			rollctr=1;
+		}
+		rs.close();
+	}
+	seed=(time(NULL)+(rollctr*rollctr));
+	srand(seed);
+}
+void append_rollctr()
+{
+	ws.open("/home/"+user+"/.rollctr");
+        ws<<std::to_string(rollctr+1);
+        ws.close();
 }
 
 int main(int argc, char *argv[])
 {
 	bool onlyRolls=false;
 	bool onlyTotal=false;
+	bool usingList=false;
 	int count, size, mod, rndhold, countLength, iLength;
-	int runctr, seed;
+	int faces_size=0;
 	int total=0;
+	std::string italics="\u001b[3m";
+	std::string normal="\u001b[0m";
 	std::string roll="";
 	std::string countstr="";
 	std::string sizestr="";
 	std::string modstr="";
-	std::string runctr_str="";
 	std::string format;
-	std::string user=getlogin();
-	std::ofstream ws;
-	std::ifstream rs;
+	std::string list="";
+	std::string temp;
+	std::string* faces;
 
 	//Handle args
 	if(argc<2)
@@ -51,7 +90,7 @@ int main(int argc, char *argv[])
 				else
 				{
 					fprintf(stderr,"Found args for both -r and -t. These are mutually exclusive!\n");
-					return -3;
+					return -1;
 				}
 			}
 			else if(std::string(argv[i])=="-t")//Flag for only showing total
@@ -63,24 +102,76 @@ int main(int argc, char *argv[])
 				else
 				{
 					fprintf(stderr,"Found args for both -r and -t. These are mutually exclusive!\n");
-					return -3;
+					return -1;
+				}
+			}
+			else if(std::string(argv[i])=="-l")//Flag for custom list
+			{
+				if(!onlyTotal)
+				{
+					usingList=true;
+				}
+				else
+				{
+					fprintf(stderr,"Found args for both -l and -t. These are mutually exclusive!\n");
+					return -1;
+				}
+
+				if(!argv[i++])
+				{
+					fprintf(stderr,"No file specified!\n");
+					return -1;
+				}
+				else
+				{
+					list=argv[i++];
+					if(!fexists((list).c_str()))
+					{
+						fprintf(stderr,("File \""+list+"\" does not exist!\n").c_str());
+						return -1;
+					}
+					else
+					{
+						rs.open(list);
+						while(rs >> temp)
+						{
+							getline(rs,temp);
+							faces_size++;
+						}
+						faces=new std::string[faces_size];
+						rs.close();
+
+						rs.open(list);
+						for(int i=0; i<faces_size; i++)
+						{
+							getline(rs,faces[i]);
+						}
+						rs.close();
+					}
+
+					set_rollctr();
+					fprintf(stdout,(faces[rand()%faces_size]+"\n").c_str());
+					append_rollctr();
+					return 0;
 				}
 			}
 			else if(std::string(argv[i])=="-?"||std::string(argv[i])=="--help")//Help text
 			{
 				fprintf(stdout,"roll: The simple terminal dice roller\n\n");
-				fprintf(stdout,"SYNTAX \"roll [-rt[?-help]] [count]d[size][+-][modifier]\"\n\n");
+				fprintf(stdout,("SYNTAX \"roll [-r|-t|-l "+italics+"file"+normal+"[-?|--help]] ["+italics+"count"+normal+"]d["+italics+"size"+normal+"]["+italics+"+"+normal+"|"+italics+"-"+normal+"]["+italics+"modifier"+normal+"]\"\n\n").c_str());
 				fprintf(stdout,"-r\n");
 				fprintf(stdout,"Only show rolls\n\n");
 				fprintf(stdout,"-t\n");
 				fprintf(stdout,"Only show total\n\n");
+				fprintf(stdout,("-l "+italics+"file"+normal+"\n").c_str());
+				fprintf(stdout,"Use custom newline-delimited list for die faces\n\n");
 				fprintf(stdout,"-? or --help\n");
 				fprintf(stdout,"Print this help text\n\n");
-				fprintf(stdout,"count\n");
+				fprintf(stdout,(italics+"count"+normal+"\n").c_str());
 				fprintf(stdout,"The number of dice to roll\n\n");
-				fprintf(stdout,"size\n");
+				fprintf(stdout,(italics+"size"+normal+"\n").c_str());
 				fprintf(stdout,"The number of sides on the die(ce)\n\n");
-				fprintf(stdout,"modifier\n");
+				fprintf(stdout,(italics+"modifier"+normal+"\n").c_str());
 				fprintf(stdout,"A modifier that is added to, or subtracted from, the total\n\n");
 				fprintf(stdout,"EXAMPLES\n\n");
 				fprintf(stdout,"roll d20\n");
@@ -93,7 +184,7 @@ int main(int argc, char *argv[])
 			else
 			{
 				fprintf(stderr,"Unknown arg \"%s\"\n",std::string(argv[i]).c_str());
-				return -2;
+				return -1;
 			}
 		}
 
@@ -108,42 +199,24 @@ int main(int argc, char *argv[])
 			catch(...)
 			{
 				fprintf(stderr,"Invalid roll format (Unable to convert dice size to integer)\n");
-				return -4;
+				return -1;
 			}
 		}
 		else if(i==argc)
 		{
 			fprintf(stderr,"Invalid roll format (no 'd' found)\n");
-			return -4;
+			return -1;
 		}
 
 		//If a roll is never established
 		if(i==argc&&roll=="")
 		{
 			fprintf(stderr,"No arguments appear to contain a dice roll\n");
-			return -5;
+			return -1;
 		}
 	}
 
-	//Open roll counter file
-	if(!fexists(("/home/"+user+"/.rollctr").c_str()))
-	{
-		ws.open("/home/"+user+"/.rollctr");
-		ws<<"1";
-		ws.close();
-	}
-	else
-	{
-		rs.open("/home/"+user+"/.rollctr");
-		getline(rs,runctr_str);
-		runctr=stoi(runctr_str);
-
-		if((time(NULL)+(runctr*runctr))>=INT_MAX)
-		{
-			runctr=1;
-		}
-		rs.close();
-	}
+	set_rollctr();
 
 	//Parse through dice roll
 	if(roll.substr(0,1)=="d")
@@ -176,7 +249,7 @@ int main(int argc, char *argv[])
 		if(i==roll.length()&&sizestr=="")
 		{
 			fprintf(stderr,"Invalid roll format ('d' found, but no modifier value located)\n");
-			return -4;
+			return -1;
 		}
 	}
 
@@ -187,7 +260,7 @@ int main(int argc, char *argv[])
 	catch(...)
 	{
 		fprintf(stderr,"Invalid roll format (Unable to convert dice size into integer)\n");
-		return -4;
+		return -1;
 	}
 
 	//Get modifer
@@ -205,7 +278,7 @@ int main(int argc, char *argv[])
 		catch(...)
 		{
 			fprintf(stderr,"Invalid roll format (Unable to convert positive roll modifier to integer)\n");
-			return -4;
+			return -1;
 		}
 	}
 	else if(roll.find("-")!=std::string::npos)
@@ -222,7 +295,7 @@ int main(int argc, char *argv[])
 		catch(...)
 		{
 			fprintf(stderr,"Invalid roll format (Unable to convert negative roll modifier to integer)\n");
-			return -4;
+			return -1;
 		}
 	}
 	else
@@ -235,9 +308,6 @@ int main(int argc, char *argv[])
 	{
 		fprintf(stdout,"Rolling \033[1m%s\033[0m\n\n",roll.c_str());
 	}
-
-	seed=(time(NULL)+(runctr*runctr));
-	srand(seed);
 
 	//Output rolls
 	if(count>1)
@@ -306,9 +376,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	ws.open("/home/"+user+"/.rollctr");
-        ws<<std::to_string(runctr+1);
-        ws.close();
-
+	append_rollctr();
 	return 0;
 }
