@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
 				fprintf(stdout,"roll 4d8+2\n");
 				fprintf(stdout,"roll -r 3d6\n");
 				fprintf(stdout,"roll -t 2d10+6\n");
+				fprintf(stdout,"roll -l test\n");
 				return 0;
 			}
 			else
