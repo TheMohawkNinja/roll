@@ -239,6 +239,7 @@ int main(int argc, char *argv[])
 		catch(...)
 		{
 			fprintf(stderr,"Can't parse dice count");
+			return -1;
 		}
 	}
 
